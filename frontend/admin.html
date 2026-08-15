@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Dashboard specific layouts */
+    .dashboard-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    
+    .stat-label {
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    /* Category counts layout */
+    .stats-split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    .dashboard-table-container {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    
+    th, td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+      background-color: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+    
+    .user-name-cell {
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+    
+    .role-badge {
+      display: inline-flex;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .role-badge.admin { background-color: #fee2e2; color: #ef4444; }
+    .role-badge.organizer { background-color: #fef3c7; color: #d97706; }
+    .role-badge.user { background-color: var(--primary-light); color: var(--primary); }
+    
+    @media (max-width: 992px) {
+      .stats-split-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar container -->
+  <nav class="navbar" id="navbar-container"></nav>
+
+  <main class="container" style="margin-top: 40px;">
+    <div style="margin-bottom: 32px;">
+      <h1>Admin Control Panel</h1>
+      <p style="color: var(--text-secondary);">Manage system users, events, and track metrics/statistics.</p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-target="stats-tab">Overview Metrics</button>
+      <button class="tab-btn" data-target="users-tab">User Management</button>
+    </div>
+
+    <!-- Overview Statistics Tab -->
+    <div class="tab-content active" id="stats-tab">
+      <div id="stats-loader" class="loader-spinner" style="margin: 60px auto;"></div>
+      
+      <div id="stats-view" style="display: none;">
+        <!-- KPI summary cards -->
+        <div class="dashboard-stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total Published Events</span>
+            <span class="stat-number" id="stat-total-events">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Average Event Price</span>
+            <span class="stat-number" id="stat-avg-price">$0.00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Average Rating score</span>
+            <span class="stat-number" id="stat-avg-rating">0.0</span>
+          </div>
+        </div>
+
+        <div class="stats-split-grid">
+          <!-- Category list breakdown -->
+          <div class="dashboard-table-container">
+            <h3 style="padding: 20px 24px; border-bottom: 1px solid var(--border); background-color: #fafaf9;">Events by Category</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th style="text-align: right;">Count</th>
+                </tr>
+              </thead>
+              <tbody id="category-stats-table">
+                <!-- Stats rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Shortcuts card -->
+          <div class="stat-card" style="justify-content: center; align-items: center; text-align: center; gap: 16px;">
+            <h3>Quick Admin Operations</h3>
+            <p style="color: var(--text-secondary); max-width: 320px;">Use these shortcuts to jump into browsing all campus events or editing specific events directly.</p>
+            <div style="display: flex; gap: 12px; width: 100%;">
+              <a href="events.html" class="btn btn-primary" style="flex: 1;">Browse Public Events</a>
+              <a href="my-events.html" class="btn btn-outline" style="flex: 1;">Manage All Events</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Management Tab -->
+    <div class="tab-content" id="users-tab">
+      <div id="users-loader" class="loader-spinner" style="margin: 60px auto;"></div>
+      
+      <div id="users-view" style="display: none;">
+        <div class="dashboard-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email Address</th>
+                <th>Role Badge</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <!-- Users populate here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer bar container -->
+  <footer class="footer" id="footer-container"></footer>
+
+  <!-- API script integrations -->
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Direct protection: force load user and redirect if not admin
+      const user = await loadUser();
+      if (!user || user.role !== 'admin') {
+        window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
+      // Tab selector bindings
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabBtns.forEach(btn => {
+        btn.onclick = () => {
+          tabBtns.forEach(b => b.classList.remove('active'));
+          tabContents.forEach(c => c.classList.remove('active'));
+          
+          btn.classList.add('active');
+          const target = btn.getAttribute('data-target');
+          document.getElementById(target).classList.add('active');
+          
+          if (target === 'users-tab') {
+            loadUsers();
+          } else {
+            loadStats();
+          }
+        };
+      });
+
+      // Load Statistics metrics
+      const statsLoader = document.getElementById('stats-loader');
+      const statsView = document.getElementById('stats-view');
+      const totalEventsSpan = document.getElementById('stat-total-events');
+      const avgPriceSpan = document.getElementById('stat-avg-price');
+      const avgRatingSpan = document.getElementById('stat-avg-rating');
+      const categoryStatsTable = document.getElementById('category-stats-table');
+
+      async function loadStats() {
+        statsLoader.style.display = 'block';
+        statsView.style.display = 'none';
+
+        try {
+          const res = await request('/events/stats');
+          if (res.status === 'success') {
+            const stats = res.data.stats;
+            const categories = res.data.eventsByCategory;
+
+            totalEventsSpan.textContent = stats.totalEvents;
+            avgPriceSpan.textContent = `$${parseFloat(stats.averagePrice).toFixed(2)}`;
+            avgRatingSpan.textContent = stats.averageRating 
+              ? parseFloat(stats.averageRating).toFixed(1) 
+              : 'N/A';
+
+            categoryStatsTable.innerHTML = '';
+            categories.forEach(cat => {
+              categoryStatsTable.innerHTML += `
+                <tr>
+                  <td style="text-transform: capitalize; font-weight: 550;">${cat.category}</td>
+                  <td style="text-align: right; font-weight: 600;">${cat.count}</td>
+                </tr>
+              `;
+            });
+
+            statsLoader.style.display = 'none';
+            statsView.style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Failed to load metrics:', error);
+          showToast(error.message, 'error');
+        }
+      }
+
+      // Load User list
+      const usersLoader = document.getElementById('users-loader');
+      const usersView = document.getElementById('users-view');
+      const usersTableBody = document.getElementById('users-table-body');
+
+      async function loadUsers() {
+        usersLoader.style.display = 'block';
+        usersView.style.display = 'none';
+
+        try {
+          const res = await request('/users');
+          if (res.status === 'success') {
+            const usersList = res.data.users;
+
+            usersTableBody.innerHTML = '';
+            usersList.forEach(u => {
+              // Admin cannot delete themselves
+              const deleteBtn = u._id === user._id
+                ? '<span style="font-size: 0.85rem; color: var(--text-secondary);">Current User</span>'
+                : `<button class="btn btn-danger btn-sm btn-delete-user" data-id="${u._id}" data-name="${escapeHtml(u.name)}">Delete</button>`;
+
+              usersTableBody.innerHTML += `
+                <tr>
+                  <td class="user-name-cell">${escapeHtml(u.name)}</td>
+                  <td>${escapeHtml(u.email)}</td>
+                  <td><span class="role-badge ${u.role}">${u.role}</span></td>
+                  <td style="text-align: right;">${deleteBtn}</td>
+                </tr>
+              `;
+            });
+
+            // Bind delete events
+            usersTableBody.querySelectorAll('.btn-delete-user').forEach(btn => {
+              btn.onclick = () => {
+                const uid = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+
+                showConfirm(
+                  'Delete User Account',
+                  `Are you sure you want to permanently delete user "${name}"? All associated bookings and reviews belonging to this user will remain affected.`,
+                  async () => {
+                    try {
+                      const delRes = await request(`/users/${uid}`, {
+                        method: 'DELETE'
+                      });
+                      if (delRes.status === 'success') {
+                        showToast('User account deleted successfully!', 'success');
+                        loadUsers(); // Reload list
+                      }
+                    } catch (err) {
+                      showToast(err.message, 'error');
+                    }
+                  }
+                );
+              };
+            });
+
+            usersLoader.style.display = 'none';
+            usersView.style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Failed to load users:', error);
+          showToast(error.message, 'error');
+        }
+      }
+
+      // Initial stats load
+      loadStats();
+    });
+  </script>
+</body>
+</html>

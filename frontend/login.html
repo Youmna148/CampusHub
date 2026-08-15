@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-container {
+      max-width: 480px;
+      margin: 80px auto;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .auth-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .auth-header h1 {
+      margin-bottom: 8px;
+    }
+    
+    .auth-header p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    .password-field-wrapper {
+      position: relative;
+    }
+    
+    .password-toggle-btn {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .auth-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar container -->
+  <nav class="navbar" id="navbar-container"></nav>
+
+  <main class="container">
+    <div class="auth-container">
+      <div class="auth-header">
+        <h1>Welcome Back</h1>
+        <p>Login to book events, post reviews, and manage your schedule.</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="you@university.edu" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <div class="password-field-wrapper">
+            <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" id="password-toggle">Show</button>
+          </div>
+        </div>
+
+        <div id="error-message" class="form-error" style="display: none; margin-bottom: 20px;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="submit-btn">Login</button>
+      </form>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="signup.html">Sign Up</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer bar container -->
+  <footer class="footer" id="footer-container"></footer>
+
+  <!-- API script integrations -->
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('login-form');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const passwordToggle = document.getElementById('password-toggle');
+      const errorMessage = document.getElementById('error-message');
+      const submitBtn = document.getElementById('submit-btn');
+
+      // Password visibility toggle
+      passwordToggle.onclick = () => {
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          passwordToggle.textContent = 'Hide';
+        } else {
+          passwordInput.type = 'password';
+          passwordToggle.textContent = 'Show';
+        }
+      };
+
+      // Form submission
+      loginForm.onsubmit = async (e) => {
+        e.preventDefault();
+        errorMessage.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Logging in...';
+
+        const payload = {
+          email: emailInput.value.trim(),
+          password: passwordInput.value
+        };
+
+        try {
+          const res = await request('/users/login', {
+            method: 'POST',
+            body: payload
+          });
+
+          if (res.status === 'success' && res.token) {
+            setToken(res.token);
+            showToast('Login successful!');
+            
+            // Redirect based on query parameters or role
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect');
+            
+            setTimeout(() => {
+              if (redirectUrl) {
+                window.location.href = decodeURIComponent(redirectUrl);
+              } else {
+                // If admin, go to admin dashboard
+                if (res.data.user.role === 'admin') {
+                  window.location.href = 'admin.html';
+                } else if (res.data.user.role === 'organizer') {
+                  window.location.href = 'my-events.html';
+                } else {
+                  window.location.href = 'index.html';
+                }
+              }
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          errorMessage.textContent = error.message;
+          errorMessage.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Login';
+        }
+      };
+    });
+  </script>
+</body>
+</html>

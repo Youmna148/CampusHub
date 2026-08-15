@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 40px;
+    }
+    
+    .profile-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .profile-card-header {
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    
+    .profile-badge {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    @media (max-width: 768px) {
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar container -->
+  <nav class="navbar" id="navbar-container"></nav>
+
+  <main class="container" style="margin-top: 40px;">
+    <div style="margin-bottom: 32px;">
+      <h1>My Account Profile</h1>
+      <p style="color: var(--text-secondary);">Manage your personal information and account security settings.</p>
+    </div>
+
+    <!-- Loader -->
+    <div id="profile-loader" class="loader-spinner" style="margin: 80px auto;"></div>
+
+    <!-- Profile View -->
+    <div id="profile-view" style="display: none;">
+      <div class="profile-grid">
+        <!-- Update Profile Details Card -->
+        <div class="profile-card">
+          <div class="profile-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">Profile Details</h3>
+            <span class="profile-badge" id="user-role-badge">Student</span>
+          </div>
+
+          <form id="profile-form">
+            <div class="form-group">
+              <label for="name" class="form-label">Full Name</label>
+              <input type="text" id="name" class="form-control" required autocomplete="name">
+            </div>
+
+            <div class="form-group">
+              <label for="email" class="form-label">Email Address</label>
+              <input type="email" id="email" class="form-control" required autocomplete="email">
+            </div>
+
+            <div id="profile-error-message" class="form-error" style="display: none; margin-bottom: 16px;"></div>
+
+            <button type="submit" class="btn btn-primary" id="save-profile-btn" style="width: 100%;">Save Details</button>
+          </form>
+        </div>
+
+        <!-- Update Password Card -->
+        <div class="profile-card">
+          <div class="profile-card-header">
+            <h3>Change Password</h3>
+          </div>
+
+          <form id="password-form">
+            <div class="form-group">
+              <label for="password-current" class="form-label">Current Password</label>
+              <input type="password" id="password-current" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <div class="form-group">
+              <label for="password-new" class="form-label">New Password</label>
+              <input type="password" id="password-new" class="form-control" placeholder="••••••••" required autocomplete="new-password" minlength="8">
+            </div>
+
+            <div class="form-group">
+              <label for="password-confirm" class="form-label">Confirm New Password</label>
+              <input type="password" id="password-confirm" class="form-control" placeholder="••••••••" required autocomplete="new-password" minlength="8">
+            </div>
+
+            <div id="password-error-message" class="form-error" style="display: none; margin-bottom: 16px;"></div>
+
+            <button type="submit" class="btn btn-accent" id="save-password-btn" style="width: 100%;">Change Password</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer bar container -->
+  <footer class="footer" id="footer-container"></footer>
+
+  <!-- API script integrations -->
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Direct protection: force load user and redirect if not logged in
+      const user = await loadUser();
+      if (!user) {
+        window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
+      const loader = document.getElementById('profile-loader');
+      const view = document.getElementById('profile-view');
+      
+      const roleBadge = document.getElementById('user-role-badge');
+      const nameInput = document.getElementById('name');
+      const emailInput = document.getElementById('email');
+      
+      const profileForm = document.getElementById('profile-form');
+      const profileError = document.getElementById('profile-error-message');
+      const saveProfileBtn = document.getElementById('save-profile-btn');
+      
+      const passwordForm = document.getElementById('password-form');
+      const currentPasswordInput = document.getElementById('password-current');
+      const newPasswordInput = document.getElementById('password-new');
+      const confirmPasswordInput = document.getElementById('password-confirm');
+      const passwordError = document.getElementById('password-error-message');
+      const savePasswordBtn = document.getElementById('save-password-btn');
+
+      // Populate current details
+      function populateDetails() {
+        loader.style.display = 'none';
+        view.style.display = 'block';
+
+        roleBadge.textContent = user.role;
+        nameInput.value = user.name;
+        emailInput.value = user.email;
+      }
+      populateDetails();
+
+      // Submit profile details update
+      profileForm.onsubmit = async (e) => {
+        e.preventDefault();
+        profileError.style.display = 'none';
+        saveProfileBtn.disabled = true;
+        saveProfileBtn.textContent = 'Saving...';
+
+        const payload = {
+          name: nameInput.value.trim(),
+          email: emailInput.value.trim()
+        };
+
+        try {
+          const res = await request('/users/updateMe', {
+            method: 'PATCH',
+            body: payload
+          });
+
+          if (res.status === 'success') {
+            showToast('Profile details updated successfully!', 'success');
+            // Refresh navigation header bar since username might have changed
+            renderNavigation();
+          }
+        } catch (error) {
+          console.error('Profile update error:', error);
+          profileError.textContent = error.message;
+          profileError.style.display = 'block';
+        } finally {
+          saveProfileBtn.disabled = false;
+          saveProfileBtn.textContent = 'Save Details';
+        }
+      };
+
+      // Submit password update
+      passwordForm.onsubmit = async (e) => {
+        e.preventDefault();
+        passwordError.style.display = 'none';
+
+        if (newPasswordInput.value !== confirmPasswordInput.value) {
+          passwordError.textContent = 'Passwords do not match';
+          passwordError.style.display = 'block';
+          return;
+        }
+
+        savePasswordBtn.disabled = true;
+        savePasswordBtn.textContent = 'Updating...';
+
+        const payload = {
+          passwordCurrent: currentPasswordInput.value,
+          password: newPasswordInput.value,
+          passwordConfirm: confirmPasswordInput.value
+        };
+
+        try {
+          const res = await request('/users/updateMyPassword', {
+            method: 'PATCH',
+            body: payload
+          });
+
+          if (res.status === 'success' && res.token) {
+            setToken(res.token); // Save new token
+            showToast('Password updated successfully!', 'success');
+            
+            // Reset form fields
+            currentPasswordInput.value = '';
+            newPasswordInput.value = '';
+            confirmPasswordInput.value = '';
+          }
+        } catch (error) {
+          console.error('Password update error:', error);
+          passwordError.textContent = error.message;
+          passwordError.style.display = 'block';
+        } finally {
+          savePasswordBtn.disabled = false;
+          savePasswordBtn.textContent = 'Change Password';
+        }
+      };
+
+    });
+  </script>
+</body>
+</html>

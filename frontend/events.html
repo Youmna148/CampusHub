@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Events — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Search and Filter Panel */
+    .filter-panel {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 1.2fr 1fr;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    
+    /* Pagination controls */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-top: 40px;
+      margin-bottom: 60px;
+    }
+    
+    .page-info {
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    @media (max-width: 768px) {
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar container -->
+  <nav class="navbar" id="navbar-container"></nav>
+
+  <main class="container" style="margin-top: 40px;">
+    <div style="margin-bottom: 32px;">
+      <h1>Explore Campus Events</h1>
+      <p style="color: var(--text-secondary);">Browse, search, and book upcoming gatherings, workshops, lectures and sports events.</p>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="filter-panel">
+      <form id="filter-form" class="filter-grid">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="search-input" class="form-label">Search Events</label>
+          <input type="text" id="search-input" class="form-control" placeholder="Search by event name...">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="category-select" class="form-label">Category</label>
+          <select id="category-select" class="form-control">
+            <option value="">All Categories</option>
+            <option value="technology">Technology</option>
+            <option value="career">Career</option>
+            <option value="sports">Sports</option>
+            <option value="workshop">Workshops</option>
+            <option value="competition">Competitions</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="sort-select" class="form-label">Sort By</label>
+          <select id="sort-select" class="form-control">
+            <option value="-createdAt">Newest First</option>
+            <option value="-ratingsAverage">Highest Rated</option>
+            <option value="price">Price: Low to High</option>
+            <option value="-price">Price: High to Low</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Filter</button>
+      </form>
+    </div>
+
+    <!-- Event Cards Grid -->
+    <div class="card-grid" id="events-grid-container">
+      <div class="loader-spinner"></div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination-container" style="display: none;">
+      <button class="btn btn-outline btn-sm" id="prev-page-btn">Previous</button>
+      <span class="page-info" id="page-info-label">Page 1</span>
+      <button class="btn btn-outline btn-sm" id="next-page-btn">Next</button>
+    </div>
+  </main>
+
+  <!-- Footer bar container -->
+  <footer class="footer" id="footer-container"></footer>
+
+  <!-- API script integrations -->
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const filterForm = document.getElementById('filter-form');
+      const searchInput = document.getElementById('search-input');
+      const categorySelect = document.getElementById('category-select');
+      const sortSelect = document.getElementById('sort-select');
+      const eventsGrid = document.getElementById('events-grid-container');
+      
+      const paginationContainer = document.getElementById('pagination-container');
+      const prevBtn = document.getElementById('prev-page-btn');
+      const nextBtn = document.getElementById('next-page-btn');
+      const pageInfo = document.getElementById('page-info-label');
+
+      let currentPage = 1;
+      const limitPerPage = 6;
+      let totalResultsFetched = 0;
+
+      // Extract query parameters from URL if present
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('category')) {
+        categorySelect.value = urlParams.get('category');
+      }
+      if (urlParams.get('search')) {
+        searchInput.value = urlParams.get('search');
+      }
+
+      // Fetch and render events
+      async function loadEvents() {
+        eventsGrid.innerHTML = '<div class="loader-spinner"></div>';
+        
+        let queryString = `?page=${currentPage}&limit=${limitPerPage}`;
+        if (searchInput.value.trim()) {
+          queryString += `&search=${encodeURIComponent(searchInput.value.trim())}`;
+        }
+        if (categorySelect.value) {
+          queryString += `&category=${categorySelect.value}`;
+        }
+        if (sortSelect.value) {
+          queryString += `&sort=${sortSelect.value}`;
+        }
+
+        try {
+          const res = await request(`/events${queryString}`);
+          if (res.status === 'success') {
+            const events = res.data.events;
+            totalResultsFetched = events.length;
+            
+            if (events.length === 0) {
+              eventsGrid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                  <div class="empty-state-icon">🔍</div>
+                  <h3 class="empty-state-title">No Events Found</h3>
+                  <p class="empty-state-text">We couldn't find any events matching your filters. Try adjusting your search query.</p>
+                  <button class="btn btn-secondary btn-sm" id="reset-filters-btn">Reset Filters</button>
+                </div>
+              `;
+              
+              document.getElementById('reset-filters-btn').onclick = () => {
+                searchInput.value = '';
+                categorySelect.value = '';
+                sortSelect.value = '-createdAt';
+                currentPage = 1;
+                loadEvents();
+              };
+              
+              paginationContainer.style.display = 'none';
+              return;
+            }
+
+            eventsGrid.innerHTML = '';
+            events.forEach(event => {
+              const isFree = event.price === 0;
+              const priceText = isFree ? 'FREE' : `$${event.price}`;
+              const ratingText = event.ratingsQuantity > 0 
+                ? `⭐ ${event.ratingsAverage} (${event.ratingsQuantity})` 
+                : '⭐ No ratings yet';
+                
+              eventsGrid.innerHTML += `
+                <div class="card">
+                  <span class="card-badge ${event.category === 'technology' || event.category === 'career' ? 'accent' : ''}">${escapeHtml(event.category)}</span>
+                  <h3 class="card-title">${escapeHtml(event.name)}</h3>
+                  <p class="card-description">${escapeHtml(event.description)}</p>
+                  
+                  <div class="card-meta">
+                    <div class="card-meta-item">
+                      <span>📅</span>
+                      <span>${formatDate(event.startDate)}</span>
+                    </div>
+                    <div class="card-meta-item">
+                      <span>📍</span>
+                      <span>${escapeHtml(event.location)}</span>
+                    </div>
+                    <div class="card-meta-item">
+                      <span>${ratingText}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="card-footer">
+                    <span class="card-price ${isFree ? 'free' : ''}">${priceText}</span>
+                    <a href="event-details.html?id=${event._id}" class="btn btn-secondary btn-sm">View Details</a>
+                  </div>
+                </div>
+              `;
+            });
+
+            // Handle pagination controls display
+            paginationContainer.style.display = 'flex';
+            pageInfo.textContent = `Page ${currentPage}`;
+            
+            // If we got exactly the limit number of items, there MIGHT be a next page
+            // (Note: Since the backend doesn't return total count in results, we verify by limit)
+            nextBtn.disabled = totalResultsFetched < limitPerPage;
+            prevBtn.disabled = currentPage === 1;
+
+          }
+        } catch (error) {
+          console.error('Failed to load events:', error);
+          eventsGrid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1; border-color: var(--danger);">
+              <div class="empty-state-icon" style="color: var(--danger);">⚠</div>
+              <h3 class="empty-state-title">Failed to Load Events</h3>
+              <p class="empty-state-text">${escapeHtml(error.message)}</p>
+            </div>
+          `;
+          paginationContainer.style.display = 'none';
+        }
+      }
+
+      // Filter trigger
+      filterForm.onsubmit = (e) => {
+        e.preventDefault();
+        currentPage = 1;
+        loadEvents();
+      };
+
+      // Pagination triggers
+      prevBtn.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          loadEvents();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+
+      nextBtn.onclick = () => {
+        if (totalResultsFetched === limitPerPage) {
+          currentPage++;
+          loadEvents();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+
+      // Initial load
+      loadEvents();
+    });
+  </script>
+</body>
+</html>

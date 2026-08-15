@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Events — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+    
+    .event-admin-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: var(--transition);
+    }
+    
+    .event-admin-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: #cbd5e1;
+    }
+    
+    .event-admin-details h3 {
+      margin-bottom: 8px;
+    }
+    
+    .event-admin-meta {
+      display: flex;
+      gap: 16px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    
+    .event-admin-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    @media (max-width: 768px) {
+      .event-admin-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      
+      .event-admin-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar container -->
+  <nav class="navbar" id="navbar-container"></nav>
+
+  <main class="container" style="margin-top: 40px;">
+    <div class="panel-header">
+      <div>
+        <h1>My Managed Events</h1>
+        <p style="color: var(--text-secondary);">Create, update, and manage bookings for events you are organizing.</p>
+      </div>
+      <a href="create-event.html" class="btn btn-accent btn-sm">Create New Event</a>
+    </div>
+
+    <!-- Loader -->
+    <div id="events-loader" class="loader-spinner" style="margin: 80px auto;"></div>
+
+    <!-- Events List View -->
+    <div id="events-view" style="display: none;">
+      <div id="events-list-container">
+        <!-- Events list populates here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer bar container -->
+  <footer class="footer" id="footer-container"></footer>
+
+  <!-- API script integrations -->
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Direct protection: force load user and redirect if not organizer/admin
+      const user = await loadUser();
+      if (!user || (user.role !== 'organizer' && user.role !== 'admin')) {
+        window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
+      const loader = document.getElementById('events-loader');
+      const view = document.getElementById('events-view');
+      const listContainer = document.getElementById('events-list-container');
+
+      async function loadMyEvents() {
+        loader.style.display = 'block';
+        view.style.display = 'none';
+        
+        // Filter events by organizer ID (or fetch all events if admin)
+        const organizerQuery = user.role === 'admin' ? '' : `&organizer=${user._id}`;
+        
+        try {
+          // Fetch events. Set a high limit to get all events the organizer manages.
+          const res = await request(`/events?limit=50&sort=-createdAt${organizerQuery}`);
+          if (res.status === 'success') {
+            const events = res.data.events;
+            
+            loader.style.display = 'none';
+            view.style.display = 'block';
+
+            if (events.length === 0) {
+              listContainer.innerHTML = `
+                <div class="empty-state">
+                  <div class="empty-state-icon">🛠️</div>
+                  <h3 class="empty-state-title">No Managed Events</h3>
+                  <p class="empty-state-text">You haven't created any events yet. Get started by designing your first campus lecture or workshop!</p>
+                  <a href="create-event.html" class="btn btn-accent btn-sm">Create an Event</a>
+                </div>
+              `;
+              return;
+            }
+
+            listContainer.innerHTML = '';
+            events.forEach(event => {
+              const isFree = event.price === 0;
+              const priceText = isFree ? 'FREE' : `$${event.price}`;
+              const ratingText = event.ratingsQuantity > 0 
+                ? `⭐ ${event.ratingsAverage} (${event.ratingsQuantity} reviews)` 
+                : '⭐ No ratings';
+
+              listContainer.innerHTML += `
+                <div class="event-admin-card">
+                  <div class="event-admin-details">
+                    <h3><a href="event-details.html?id=${event._id}">${escapeHtml(event.name)}</a></h3>
+                    <div class="event-admin-meta">
+                      <span>📅 ${formatDate(event.startDate)}</span>
+                      <span>📍 ${escapeHtml(event.location)}</span>
+                      <span>💰 ${priceText}</span>
+                      <span>${ratingText}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="event-admin-actions">
+                    <a href="edit-event.html?id=${event._id}" class="btn btn-outline btn-sm">Edit</a>
+                    <button class="btn btn-danger btn-sm btn-delete-event" data-id="${event._id}" data-name="${escapeHtml(event.name)}">Delete</button>
+                  </div>
+                </div>
+              `;
+            });
+
+            // Bind delete actions
+            listContainer.querySelectorAll('.btn-delete-event').forEach(btn => {
+              btn.onclick = () => {
+                const eid = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+                
+                showConfirm(
+                  'Delete Event',
+                  `Are you sure you want to permanently delete "${name}"? This action will remove the event and cannot be undone.`,
+                  async () => {
+                    try {
+                      const delRes = await request(`/events/${eid}`, {
+                        method: 'DELETE'
+                      });
+                      if (delRes.status === 'success') {
+                        showToast('Event deleted successfully!', 'success');
+                        loadMyEvents(); // Reload list
+                      }
+                    } catch (err) {
+                      showToast(err.message, 'error');
+                    }
+                  }
+                );
+              };
+            });
+
+          }
+        } catch (error) {
+          console.error('Failed to load managed events:', error);
+          loader.style.display = 'none';
+          view.style.display = 'block';
+          listContainer.innerHTML = `
+            <div class="empty-state" style="border-color: var(--danger);">
+              <div class="empty-state-icon" style="color: var(--danger);">⚠</div>
+              <h3 class="empty-state-title">Failed to Load Managed Events</h3>
+              <p class="empty-state-text">${escapeHtml(error.message)}</p>
+            </div>
+          `;
+        }
+      }
+
+      // Initial load
+      loadMyEvents();
+    });
+  </script>
+</body>
+</html>

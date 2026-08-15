@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bookings — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Table styles for bookings list */
+    .table-container {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 40px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    
+    th, td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+      background-color: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .event-title-cell {
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .status-badge.confirmed {
+      background-color: var(--success-light);
+      color: var(--success);
+    }
+    
+    .status-badge.cancelled {
+      background-color: var(--danger-light);
+      color: var(--danger);
+    }
+    
+    @media (max-width: 768px) {
+      .table-container {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+      }
+      
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+      
+      tr {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        margin-bottom: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow-sm);
+      }
+      
+      td {
+        border: none;
+        padding: 8px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+      
+      td:last-child {
+        border-top: 1px solid var(--border);
+        padding-top: 12px;
+        margin-top: 8px;
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar container -->
+  <nav class="navbar" id="navbar-container"></nav>
+
+  <main class="container" style="margin-top: 40px;">
+    <div style="margin-bottom: 32px;">
+      <h1>My Bookings</h1>
+      <p style="color: var(--text-secondary);">Manage your reserved spots for upcoming gatherings and workshops.</p>
+    </div>
+
+    <!-- Loader -->
+    <div id="bookings-loader" class="loader-spinner" style="margin: 80px auto;"></div>
+
+    <!-- Bookings View -->
+    <div id="bookings-view" style="display: none;">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Date & Time</th>
+              <th>Location</th>
+              <th>Price at Booking</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-table-body">
+            <!-- Bookings populate here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer bar container -->
+  <footer class="footer" id="footer-container"></footer>
+
+  <!-- API script integrations -->
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Direct protection: force load user and redirect if not logged in
+      const user = await loadUser();
+      if (!user) {
+        window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
+      const loader = document.getElementById('bookings-loader');
+      const view = document.getElementById('bookings-view');
+      const tableBody = document.getElementById('bookings-table-body');
+
+      async function loadBookings() {
+        loader.style.display = 'block';
+        view.style.display = 'none';
+        
+        try {
+          const res = await request('/bookings');
+          if (res.status === 'success') {
+            const bookings = res.data.bookings;
+            
+            loader.style.display = 'none';
+            view.style.display = 'block';
+
+            if (bookings.length === 0) {
+              view.innerHTML = `
+                <div class="empty-state">
+                  <div class="empty-state-icon">🎟️</div>
+                  <h3 class="empty-state-title">No Bookings Yet</h3>
+                  <p class="empty-state-text">You haven't reserved a spot for any events. Browse the events listing to find something interesting!</p>
+                  <a href="events.html" class="btn btn-primary btn-sm">Explore Events</a>
+                </div>
+              `;
+              return;
+            }
+
+            tableBody.innerHTML = '';
+            bookings.forEach(booking => {
+              const event = booking.event;
+              // Check if event is missing (deleted event fallback)
+              const eventTitle = event ? event.name : 'Unknown Event (Deleted)';
+              const eventDate = event ? formatDate(event.startDate) : 'N/A';
+              const eventLocation = event ? event.location : 'N/A';
+              
+              const isFree = booking.price === 0;
+              const priceText = isFree ? 'FREE' : `$${booking.price}`;
+              
+              // Only allow cancelling if the event is in the future
+              const isUpcoming = event ? new Date(event.startDate) > new Date() : false;
+              const cancelBtn = isUpcoming
+                ? `<button class="btn btn-danger btn-sm btn-cancel-booking" data-id="${booking._id}" data-title="${escapeHtml(eventTitle)}">Cancel Ticket</button>`
+                : `<span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 550;">Completed</span>`;
+
+              tableBody.innerHTML += `
+                <tr>
+                  <td data-label="Event" class="event-title-cell">
+                    ${event ? `<a href="event-details.html?id=${event._id}">${escapeHtml(eventTitle)}</a>` : escapeHtml(eventTitle)}
+                  </td>
+                  <td data-label="Date & Time">${eventDate}</td>
+                  <td data-label="Location">${escapeHtml(eventLocation)}</td>
+                  <td data-label="Price" style="font-weight: 600;">${priceText}</td>
+                  <td data-label="Status">
+                    <span class="status-badge ${booking.status}">${booking.status}</span>
+                  </td>
+                  <td data-label="Actions">${cancelBtn}</td>
+                </tr>
+              `;
+            });
+
+            // Bind Cancel events
+            tableBody.querySelectorAll('.btn-cancel-booking').forEach(btn => {
+              btn.onclick = () => {
+                const bid = btn.getAttribute('data-id');
+                const title = btn.getAttribute('data-title');
+                
+                showConfirm(
+                  'Cancel Booking Ticket',
+                  `Are you sure you want to cancel your reserved ticket for "${title}"? This actions releases your spot back to the event capacity.`,
+                  async () => {
+                    try {
+                      const cancelRes = await request(`/bookings/${bid}`, {
+                        method: 'DELETE'
+                      });
+                      if (cancelRes.status === 'success') {
+                        showToast('Booking cancelled successfully!', 'success');
+                        loadBookings(); // Reload list
+                      }
+                    } catch (err) {
+                      showToast(err.message, 'error');
+                    }
+                  }
+                );
+              };
+            });
+
+          }
+        } catch (error) {
+          console.error('Failed to load bookings:', error);
+          loader.style.display = 'none';
+          view.style.display = 'block';
+          view.innerHTML = `
+            <div class="empty-state" style="border-color: var(--danger);">
+              <div class="empty-state-icon" style="color: var(--danger);">⚠</div>
+              <h3 class="empty-state-title">Failed to Load Bookings</h3>
+              <p class="empty-state-text">${escapeHtml(error.message)}</p>
+            </div>
+          `;
+        }
+      }
+
+      // Initial load
+      loadBookings();
+    });
+  </script>
+</body>
+</html>

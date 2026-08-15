@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusHub — Discover What's Happening on Campus</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Home Page Specific Hero Styles */
+    .hero {
+      background-color: var(--primary-light);
+      padding: 80px 0;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 60px;
+    }
+    
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      align-items: center;
+      gap: 40px;
+    }
+    
+    .hero-title {
+      font-size: 3.2rem;
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+      max-width: 550px;
+    }
+    
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+    }
+    
+    .hero-graphic {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .hero-circle {
+      width: 320px;
+      height: 320px;
+      background-color: var(--accent);
+      border-radius: var(--radius-full);
+      opacity: 0.15;
+      position: absolute;
+    }
+    
+    .hero-card-sample {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-xl);
+      z-index: 1;
+      width: 280px;
+      transform: rotate(-3deg);
+    }
+    
+    /* Category grid styling */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+    
+    .category-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .category-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .category-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    
+    .category-name {
+      font-weight: 600;
+      color: var(--primary-dark);
+      text-transform: capitalize;
+    }
+    
+    /* Why us section */
+    .why-section {
+      background-color: white;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 80px 0;
+      margin-bottom: 60px;
+    }
+    
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+    
+    .why-card {
+      text-align: center;
+    }
+    
+    .why-icon {
+      width: 60px;
+      height: 60px;
+      background-color: var(--primary-light);
+      color: var(--primary);
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    
+    .why-title {
+      font-size: 1.25rem;
+      margin-bottom: 12px;
+    }
+    
+    .why-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    @media (max-width: 768px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .hero-graphic {
+        display: none;
+      }
+      
+      .why-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation bar container -->
+  <nav class="navbar" id="navbar-container"></nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container hero-grid">
+      <div>
+        <h1 class="hero-title">Discover What’s<br>Happening on Campus</h1>
+        <p class="hero-subtitle">CampusHub brings all university lectures, career workshops, sports matches, and social gatherings together. Find your path, meet new peers, and save your spot.</p>
+        <div class="hero-actions">
+          <a href="events.html" class="btn btn-primary">Explore Events</a>
+          <a href="signup.html" class="btn btn-outline" id="hero-signup-btn">Create an Account</a>
+        </div>
+      </div>
+      <div class="hero-graphic">
+        <div class="hero-circle"></div>
+        <div class="hero-card-sample">
+          <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent); text-transform: uppercase;">Featured Event</span>
+          <h4 style="margin: 8px 0;">Intro to Python Lecture</h4>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">📅 Tomorrow at 2:00 PM</p>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; color: var(--success);">FREE</span>
+            <span style="font-size: 0.8rem; background: var(--primary-light); padding: 2px 6px; border-radius: var(--radius-sm); color: var(--primary);">Lecture</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- Browse Categories -->
+    <section>
+      <h2 class="section-title">Explore by Category</h2>
+      <div class="category-grid">
+        <div class="category-card" onclick="window.location.href='events.html?category=technology'">
+          <span class="category-icon">💻</span>
+          <span class="category-name">Technology</span>
+        </div>
+        <div class="category-card" onclick="window.location.href='events.html?category=career'">
+          <span class="category-icon">💼</span>
+          <span class="category-name">Career</span>
+        </div>
+        <div class="category-card" onclick="window.location.href='events.html?category=sports'">
+          <span class="category-icon">⚽</span>
+          <span class="category-name">Sports</span>
+        </div>
+        <div class="category-card" onclick="window.location.href='events.html?category=workshop'">
+          <span class="category-icon">🛠️</span>
+          <span class="category-name">Workshops</span>
+        </div>
+        <div class="category-card" onclick="window.location.href='events.html?category=competition'">
+          <span class="category-icon">🏆</span>
+          <span class="category-name">Competitions</span>
+        </div>
+        <div class="category-card" onclick="window.location.href='events.html?category=other'">
+          <span class="category-icon">✨</span>
+          <span class="category-name">Other</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Events Section -->
+    <section style="margin-bottom: 60px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+        <h2 class="section-title" style="margin-bottom: 0;">Featured Upcoming Events</h2>
+        <a href="events.html" class="btn btn-outline btn-sm">View All Events →</a>
+      </div>
+      
+      <div class="card-grid" id="featured-events-container">
+        <!-- Event skeletons will render here first -->
+        <div class="loader-spinner"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Why CampusHub Section -->
+  <section class="why-section">
+    <div class="container">
+      <h2 class="section-title" style="display: block; text-align: center; margin-bottom: 48px;">Why Use CampusHub?</h2>
+      <div class="why-grid">
+        <div class="why-card">
+          <div class="why-icon">📅</div>
+          <h3 class="why-title">Discover Events</h3>
+          <p class="why-text">Browse categorized workshops, hackathons, seminars, and sports meets. Find exactly what fits your interest and schedule.</p>
+        </div>
+        <div class="why-card">
+          <div class="why-icon">🎟️</div>
+          <h3 class="why-title">Reserve Your Spot</h3>
+          <p class="why-text">Instantly book free or paid events with capacity checks. Track your upcoming schedule under your personal bookings dashboard.</p>
+        </div>
+        <div class="why-card">
+          <div class="why-icon">⭐</div>
+          <h3 class="why-title">Share Your Experience</h3>
+          <p class="why-text">Rate and review events you have attended. Help organizers improve event quality and guide other students in their selections.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer bar container -->
+  <footer class="footer" id="footer-container"></footer>
+
+  <!-- API script integrations -->
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check auth state for hero button
+      const user = await loadUser();
+      if (user) {
+        document.getElementById('hero-signup-btn').style.display = 'none';
+      }
+      
+      // Load featured events
+      const eventsContainer = document.getElementById('featured-events-container');
+      try {
+        const res = await request('/events?limit=3&sort=-createdAt');
+        if (res.status === 'success' && res.data.events.length > 0) {
+          eventsContainer.innerHTML = '';
+          res.data.events.forEach(event => {
+            const isFree = event.price === 0;
+            const priceText = isFree ? 'FREE' : `$${event.price}`;
+            const ratingText = event.ratingsQuantity > 0 
+              ? `⭐ ${event.ratingsAverage} (${event.ratingsQuantity})` 
+              : '⭐ No ratings yet';
+              
+            eventsContainer.innerHTML += `
+              <div class="card">
+                <span class="card-badge ${event.category === 'technology' || event.category === 'career' ? 'accent' : ''}">${escapeHtml(event.category)}</span>
+                <h3 class="card-title">${escapeHtml(event.name)}</h3>
+                <p class="card-description">${escapeHtml(event.description)}</p>
+                
+                <div class="card-meta">
+                  <div class="card-meta-item">
+                    <span>📅</span>
+                    <span>${formatDate(event.startDate)}</span>
+                  </div>
+                  <div class="card-meta-item">
+                    <span>📍</span>
+                    <span>${escapeHtml(event.location)}</span>
+                  </div>
+                  <div class="card-meta-item">
+                    <span>${ratingText}</span>
+                  </div>
+                </div>
+                
+                <div class="card-footer">
+                  <span class="card-price ${isFree ? 'free' : ''}">${priceText}</span>
+                  <a href="event-details.html?id=${event._id}" class="btn btn-secondary btn-sm">View Details</a>
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          eventsContainer.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+              <div class="empty-state-icon">🎟️</div>
+              <h3 class="empty-state-title">No Events Available</h3>
+              <p class="empty-state-text">There are currently no events posted. Check back later!</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Failed to load featured events:', error);
+        eventsContainer.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1; border-color: var(--danger);">
+            <div class="empty-state-icon" style="color: var(--danger);">⚠</div>
+            <h3 class="empty-state-title">Failed to Load Events</h3>
+            <p class="empty-state-text">We encountered an issue loading featured events. Please try reloading the page.</p>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
