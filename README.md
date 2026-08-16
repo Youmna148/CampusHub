@@ -1817,12 +1817,6 @@ client interaction
 
 CampusHub brings those pieces together in one complete application.
 
----
 
-# Author
 
-**Youmna**
 
-Computer Engineering Student
-
-CampusHub was developed as a practical full-stack/backend project while studying and applying Node.js, Express, MongoDB, Mongoose, REST APIs, authentication, security, and production-oriented backend patterns.
